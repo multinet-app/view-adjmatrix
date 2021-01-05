@@ -360,12 +360,12 @@ export default Vue.extend({
         });
       });
 
-      // Count occurrences of links and store it in the matrix
-      this.network.links.forEach((link: Link) => {
-        this.matrix[this.idMap[link._from]][this.idMap[link._to]].z += 1;
+      // Count occurrences of edges and store it in the matrix
+      this.network.edges.forEach((edge: Link) => {
+        this.matrix[this.idMap[edge._from]][this.idMap[edge._to]].z += 1;
 
         if (!this.directional) {
-          this.matrix[this.idMap[link._to]][this.idMap[link._from]].z += 1;
+          this.matrix[this.idMap[edge._to]][this.idMap[edge._from]].z += 1;
         }
       });
 
@@ -1269,16 +1269,16 @@ export default Vue.extend({
         type === 'clusterBary' ||
         type === 'clusterLeaf'
       ) {
-        const links: any[] = Array(this.network.links.length);
+        const edges: any[] = Array(this.network.edges.length);
 
         // Generate links that are compatible with reorder.js
-        this.network.links.forEach((link: Link, index: number) => {
-          links[index] = {
+        this.network.edges.forEach((edge: Link, index: number) => {
+          edges[index] = {
             source: this.network.nodes.find(
-              (node: Node) => node.id === link._from,
+              (node: Node) => node.id === edge._from,
             ),
             target: this.network.nodes.find(
-              (node: Node) => node.id === link._to,
+              (node: Node) => node.id === edge._to,
             ),
           };
         });
@@ -1286,7 +1286,7 @@ export default Vue.extend({
         const sortableNetwork = reorder
           .graph()
           .nodes(this.network.nodes)
-          .links(links)
+          .links(edges)
           .init();
 
         if (type === 'clusterBary') {

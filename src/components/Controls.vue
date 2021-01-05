@@ -30,7 +30,7 @@ export default Vue.extend({
     return {
       network: {
         nodes: [],
-        links: [],
+        edges: [],
       },
       workspace: '',
       networkName: '',
