@@ -93,6 +93,7 @@ export default Vue.extend({
     provenance: any;
     sortKey: string;
     colMargin: number;
+    showIcon: boolean;
   } {
     return {
       browser: {
@@ -151,6 +152,7 @@ export default Vue.extend({
       provenance: undefined,
       sortKey: '',
       colMargin: 5,
+      showIcon: false,
     };
   },
 
@@ -678,58 +680,77 @@ export default Vue.extend({
         }
       });
 
-      rowEnter
-        .on('mouseout', (d: Node) => {
-          this.hideToolTip();
-          this.unHoverNode(d.id);
-        })
-        .on('click', (d: Node) => {
-          // allow expanding the vis if graffinity features are turned on
-          if (this.enableGraffinity) {
-            if (d.type === 'childnode') {
-              return;
-            }
-            const supernode = d;
-            // expand and retract the supernode aggregation based on user selection
-            if (this.clickMap.get(supernode.id)) {
-              this.$emit(
-                'updateNetwork',
-                retractSuperNetwork(
-                  this.nonAggrNodes,
-                  this.nonAggrLinks,
-                  this.network.nodes,
-                  this.network.links,
-                  supernode,
-                ),
-              );
-              this.clickMap.set(supernode.id, false);
+      rowEnter.on('mouseout', (d: Node) => {
+        this.hideToolTip();
+        this.unHoverNode(d.id);
+      });
 
-              // Hide Child Legend
-              const values = [...this.clickMap.values()];
-              if (!values.includes(true)) {
-                this.$emit('updateMatrixLegends', true, false);
-              }
+      if (this.showIcon === true) {
+        const expandPath =
+          'M17,13H13V17H11V13H7V11H11V7H13V11H17M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z';
+        // const retractPath =
+        //   'M17,13H7V11H17M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z';
+        rowEnter
+          .append('path')
+          .attr('id', (d: Node) => d.id)
+          .attr('d', (d: Node) => {
+            if (d.type === 'supernode') {
+              return expandPath;
             } else {
-              this.$emit(
-                'updateNetwork',
-                expandSuperNetwork(
-                  this.nonAggrNodes,
-                  this.nonAggrLinks,
-                  this.network.nodes,
-                  this.network.links,
-                  supernode,
-                ),
-              );
-              this.clickMap.set(supernode.id, true);
+              return '';
+            }
+          })
+          // .attr('d', "M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z")
+          .attr('transform', 'scale(0.6)translate(-50, 2)');
+      }
 
-              // Display Child Legend
-              this.$emit('updateMatrixLegends', true, true);
+      rowEnter.on('click', (d: Node) => {
+        // allow expanding the vis if graffinity features are turned on
+        if (this.enableGraffinity) {
+          if (d.type === 'childnode') {
+            return;
+          }
+          const supernode = d;
+          // expand and retract the supernode aggregation based on user selection
+          if (this.clickMap.get(supernode.id)) {
+            this.$emit(
+              'updateNetwork',
+              retractSuperNetwork(
+                this.nonAggrNodes,
+                this.nonAggrLinks,
+                this.network.nodes,
+                this.network.links,
+                supernode,
+              ),
+            );
+            this.clickMap.set(supernode.id, false);
+
+            // Hide Child Legend
+            const values = [...this.clickMap.values()];
+            if (!values.includes(true)) {
+              this.$emit('updateMatrixLegends', true, false);
             }
           } else {
-            this.selectElement(d);
-            this.selectNeighborNodes(d.id, d.neighbors);
+            this.$emit(
+              'updateNetwork',
+              expandSuperNetwork(
+                this.nonAggrNodes,
+                this.nonAggrLinks,
+                this.network.nodes,
+                this.network.links,
+                supernode,
+              ),
+            );
+            this.clickMap.set(supernode.id, true);
+
+            // Display Child Legend
+            this.$emit('updateMatrixLegends', true, true);
           }
-        });
+        } else {
+          this.selectElement(d);
+          this.selectNeighborNodes(d.id, d.neighbors);
+        }
+      });
 
       rowEnter.append('g').attr('class', 'cellsGroup');
 
@@ -1085,6 +1106,7 @@ export default Vue.extend({
           if (this.enableGraffinity) {
             this.nonAggrNodes = processChildNodes(this.network.nodes);
             this.nonAggrLinks = processChildLinks(this.network.links);
+            this.showIcon = true;
             this.$emit(
               'updateNetwork',
               superGraph(this.network.nodes, this.network.links, d),
