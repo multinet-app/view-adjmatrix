@@ -643,24 +643,29 @@ export default Vue.extend({
           'M17,13H13V17H11V13H7V11H11V7H13V11H17M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z';
         const retractPath =
           'M17,13H7V11H17M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z';
-        const button = selectAll('.rowContainer').data(this.network.nodes);
+        const button = selectAll('.rowContainer')
+          .selectAll('.aggrButton')
+          .data(this.network.nodes);
 
-        button
+        button.exit().remove();
+
+        const buttonEnter = button
+          .enter()
           .append('path')
           .attr('class', 'aggrButton')
           .attr('d', (d: Node) => {
             if (d.type === 'supernode') {
               const nodeID = d.id;
+              console.log('click map state: ', this.clickMap);
+              // console.log("node name: ", nodeID, "node type: ", d.type);
               // console.log('node Name', nodeName);
               // console.log('retract path: ', retractPath);
-              const lookup = this.clickMap.get(nodeID);
-              console.log('lookup: ', lookup);
-              if (lookup === undefined) {
-                return expandPath;
-              } else if (lookup === false) {
-                return expandPath;
-              } else {
+              // const lookup = this.clickIconList.includes(nodeID);
+              // console.log('lookup: ', lookup);
+              if (this.clickMap.get(nodeID) === true) {
                 return retractPath;
+              } else {
+                return expandPath;
               }
             } else {
               return '';
@@ -668,7 +673,7 @@ export default Vue.extend({
           })
           .attr('transform', 'scale(0.6)translate(-70, 3)');
 
-        button.on('click', (d: Node) => {
+        buttonEnter.on('click', (d: Node) => {
           // allow expanding the vis if graffinity features are turned on
           if (this.enableGraffinity) {
             if (d.type === 'childnode') {
@@ -688,6 +693,8 @@ export default Vue.extend({
                 ),
               );
               this.clickMap.set(supernode.id, false);
+              console.log('enter the retract function');
+              // console.log("click icon list retract: ", this.clickIconList);
               this.clickIconList = this.clickIconList.filter(
                 (id: string) => id !== supernode.id,
               );
@@ -698,6 +705,7 @@ export default Vue.extend({
                 this.$emit('updateMatrixLegends', true, false);
               }
             } else {
+              this.clickMap.set(supernode.id, true);
               this.$emit(
                 'updateNetwork',
                 expandSuperNetwork(
@@ -708,8 +716,7 @@ export default Vue.extend({
                   supernode,
                 ),
               );
-              this.clickMap.set(supernode.id, true);
-              this.clickIconList.push(supernode.id);
+              console.log('enter the expand function');
 
               // Display Child Legend
               this.$emit('updateMatrixLegends', true, true);
@@ -719,6 +726,8 @@ export default Vue.extend({
             this.selectNeighborNodes(d.id, d.neighbors);
           }
         });
+
+        this.edgeRows.merge(buttonEnter);
       }
 
       rowEnter
@@ -824,7 +833,6 @@ export default Vue.extend({
       });
 
       rowEnter.append('g').attr('class', 'cellsGroup');
-
       this.edgeRows.merge(rowEnter);
 
       this.drawGridLines();
